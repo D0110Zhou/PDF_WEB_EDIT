@@ -4,6 +4,9 @@ body { display: flex; flex-direction: column; overflow: hidden; background: #1e1
 .toolbar { display: flex; gap: 12px; padding: 10px 14px; background: #2a2a2a; border-bottom: 1px solid #444; align-items: center; flex-wrap: wrap; }
 .toolbar-control { font-size: 13px; display: flex; align-items: center; gap: 6px; }
 .toolbar input[type=file] { color: #eee; font-size: 12px; }
+.toolbar input[type=text], .toolbar select { max-width: 170px; }
+.file-button input[type=file] { width: 150px; }
+.file-button { gap: 3px; }
 .toolbar button, .toolbar select, .toolbar input[type=range] { font-size: 13px; }
 .toolbar button { padding: 5px 12px; background: #0078D7; color: white; border: none; border-radius: 4px; cursor: pointer; }
 .toolbar button:hover { background: #106ebe; }
@@ -17,9 +20,30 @@ body { display: flex; flex-direction: column; overflow: hidden; background: #1e1
 .diagnostics h2 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #4fc3f7; }
 .diagnostics pre { margin: 0 0 12px; padding: 8px; background: #1a1a1a; border-radius: 3px; font-size: 11px; overflow: auto; max-height: 280px; line-height: 1.5; color: #b0bec5; white-space: pre-wrap; }
 .diagnostics .help { white-space: pre; }
+.cell-tools { display: grid; gap: 7px; margin-bottom: 10px; }
+.cell-tools label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cell-tools input { width: 130px; }
+.cell-tools .checkbox-label { justify-content: flex-start; }
+.cell-tools .checkbox-label input { width: auto; }
+.adjust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.adjust-grid button { padding: 5px 3px; }
+.cell-editors { display: grid; gap: 6px; }
+.font-status { margin: -6px 0 10px; color: #b0bec5; line-height: 1.4; }
+.cell-editor { display: grid; grid-template-columns: 52px 1fr; align-items: start; gap: 6px; }
+.cell-editor textarea { min-width: 0; resize: vertical; font: 12px/1.4 inherit; }
+#annotationOverlay { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+#viewer.selecting-roi, #viewer.selecting-roi #canvas { cursor: crosshair; }
+#viewer.pdfjs-rendering #textLayer { display: none; }
+#annotationOverlay .user-roi, #annotationOverlay .roi-preview { fill: rgba(255, 170, 0, 0.08); stroke: #ff8c00; stroke-width: 1.5; stroke-dasharray: 6 4; }
+#annotationOverlay .detected-cell { fill: rgba(0, 120, 215, 0.06); stroke: #0078d7; stroke-width: 1.25; }
+#annotationOverlay .cell-marker { fill: #dc3232; stroke: white; stroke-width: 1; }
+#annotationOverlay .cell-marker-text { fill: white; font: 9px sans-serif; text-anchor: middle; }
+#annotationOverlay .cell-preview { fill: black; text-anchor: start; dominant-baseline: alphabetic; font-kerning: none; pointer-events: none; }
+#roiModeBtn[aria-pressed="true"] { background: #c05a00; }
 .badge { padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; }
 .badge.gpu { background: #2e7d32; color: white; }
 .badge.gl { background: #1565c0; color: white; }
+.badge.pdfjs { background: #6a4c93; color: white; }
 .badge.err { background: #c62828; color: white; }
 .badge.init { background: #555; color: #aaa; }
 .zoom-value { min-width: 70px; color: #4fc3f7; font-family: Consolas, monospace; font-weight: bold; }

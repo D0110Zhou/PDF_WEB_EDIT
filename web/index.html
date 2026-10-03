@@ -10,6 +10,25 @@
   <body>
     <header class="toolbar">
       <input type="file" id="fileInput" accept="application/pdf,.pdf" aria-label="選擇 PDF" />
+      <label class="toolbar-control">頁碼範圍
+        <input type="text" id="pageRange" value="1" aria-label="頁碼範圍" />
+      </label>
+      <button id="loadPagesBtn" type="button">載入頁面</button>
+      <label class="toolbar-control">目前頁
+        <select id="pageSelect" aria-label="目前頁面" disabled></select>
+      </label>
+      <button id="roiModeBtn" type="button" aria-pressed="false">框選表格</button>
+      <button id="saveProjectBtn" type="button">儲存 JSON</button>
+      <label class="toolbar-control file-button">載入 JSON
+        <input type="file" id="projectInput" accept="application/json,.json" />
+      </label>
+      <label class="toolbar-control file-button">英數 Calibri
+        <input type="file" id="latinFontInput" accept=".ttf,.otf,application/font-sfnt" />
+      </label>
+      <label class="toolbar-control file-button">中文標楷體
+        <input type="file" id="cjkFontInput" accept=".ttf,.otf,application/font-sfnt" />
+      </label>
+      <button id="exportPdfBtn" type="button">匯出 PDF</button>
       <label class="toolbar-control">縮放
         <input type="range" id="zoomSlider" min="0.1" max="64" step="0.1" value="1" />
         <span class="zoom-value" id="zoomLabel">100%</span>
@@ -17,6 +36,7 @@
       <label class="toolbar-control">後端
         <select id="backendSelect" aria-label="渲染後端">
           <option value="auto">自動</option>
+          <option value="pdfjs">PDF.js 完整頁面</option>
           <option value="webgpu">WebGPU</option>
           <option value="webgl">WebGL</option>
         </select>
@@ -30,6 +50,7 @@
       <section id="viewer" aria-label="PDF 頁面檢視區">
         <canvas id="canvas"></canvas>
         <div id="textLayer" aria-hidden="true"></div>
+        <svg id="annotationOverlay" aria-hidden="true"></svg>
       </section>
       <aside class="diagnostics">
         <h2>狀態</h2>
@@ -40,6 +61,27 @@
         <pre class="help">· 拖曳平移
 · 滾輪縮放（以游標為中心）
 · 拉到 6400% 觀察向量清晰度</pre>
+        <h2>表格格子</h2>
+        <p id="fontStatus" class="font-status">正在讀取系統 Calibri 與標楷體；部署版可從 C:\Windows\Fonts 選取字型。</p>
+        <div class="cell-tools">
+          <label>字級 pt <input id="fontSize" type="number" min="4" max="72" step="0.5" value="12" /></label>
+          <label>行距倍數 <input id="lineSpacing" type="number" min="0.5" max="3" step="0.01" value="1" /></label>
+          <label class="checkbox-label"><input id="autoFit" type="checkbox" checked />文字過多時自動縮小</label>
+          <label>編號範圍 <input id="cellRange" type="text" value="1-4,8,9" /></label>
+          <label>步長 pt <input id="adjustStep" type="number" min="0.1" max="20" step="0.5" value="1" /></label>
+          <div class="adjust-grid">
+            <button data-adjust="up" type="button">▲</button>
+            <button data-adjust="left" type="button">◀</button>
+            <button data-adjust="right" type="button">▶</button>
+            <button data-adjust="down" type="button">▼</button>
+            <button data-adjust="width-dec" type="button">寬 −</button>
+            <button data-adjust="width-inc" type="button">寬 +</button>
+            <button data-adjust="height-dec" type="button">高 −</button>
+            <button data-adjust="height-inc" type="button">高 +</button>
+          </div>
+          <button id="resetCellsBtn" type="button">還原選取格子</button>
+        </div>
+        <div id="cellEditors" class="cell-editors" aria-live="polite">框選表格區域以偵測格子。</div>
       </aside>
     </main>
 

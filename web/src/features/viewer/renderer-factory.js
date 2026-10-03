@@ -1,11 +1,17 @@
 import { WebGLBackend } from './webgl-renderer.js';
 import { WebGPUBackend } from './webgpu-renderer.js';
+import { PdfJsRenderer } from './pdfjs-renderer.js';
 
 /**
  * Select and initialize a renderer. A fresh canvas is supplied for each
  * attempt because browsers bind a canvas permanently to its first context type.
  */
-export async function createRenderer(preference, getFreshCanvas, onAttempt = () => {}) {
+export async function createRenderer(preference, getFreshCanvas, onAttempt = () => {}, options = {}) {
+  if (preference === 'pdfjs') {
+    const backend = new PdfJsRenderer(getFreshCanvas(), options.page, options.onRasterReady);
+    onAttempt('✓ PDF.js 完整頁面渲染');
+    return { backend, name: 'PDF.js (完整頁面)', badgeClass: 'pdfjs' };
+  }
   const attempts = preference === 'webgpu'
     ? ['webgpu']
     : preference === 'webgl'
