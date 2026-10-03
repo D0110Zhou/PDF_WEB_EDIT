@@ -1,0 +1,14 @@
+# Node / Vite
+**/node_modules/
+web/dist/
+web/.vite/
+.pnpm-store/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local renders and temporary QA output
+tmp/

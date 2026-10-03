@@ -1,0 +1,29 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", sans-serif; }
+body { display: flex; flex-direction: column; overflow: hidden; background: #1e1e1e; color: #eee; }
+.toolbar { display: flex; gap: 12px; padding: 10px 14px; background: #2a2a2a; border-bottom: 1px solid #444; align-items: center; flex-wrap: wrap; }
+.toolbar-control { font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.toolbar input[type=file] { color: #eee; font-size: 12px; }
+.toolbar button, .toolbar select, .toolbar input[type=range] { font-size: 13px; }
+.toolbar button { padding: 5px 12px; background: #0078D7; color: white; border: none; border-radius: 4px; cursor: pointer; }
+.toolbar button:hover { background: #106ebe; }
+.workspace { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+#viewer { flex: 1; min-width: 0; position: relative; overflow: hidden; background: white; }
+#canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; cursor: grab; }
+#canvas.dragging { cursor: grabbing; }
+#textLayer { position: absolute; top: 0; left: 0; pointer-events: none; transform-origin: 0 0; }
+#textLayer span { position: absolute; white-space: pre; color: #000; line-height: 1; transform-origin: 0 0; font-family: Arial, "Microsoft JhengHei", "PingFang TC", sans-serif; }
+.diagnostics { flex: 0 0 340px; padding: 10px; background: #2a2a2a; border-left: 1px solid #444; overflow-y: auto; font-size: 12px; }
+.diagnostics h2 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #4fc3f7; }
+.diagnostics pre { margin: 0 0 12px; padding: 8px; background: #1a1a1a; border-radius: 3px; font-size: 11px; overflow: auto; max-height: 280px; line-height: 1.5; color: #b0bec5; white-space: pre-wrap; }
+.diagnostics .help { white-space: pre; }
+.badge { padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+.badge.gpu { background: #2e7d32; color: white; }
+.badge.gl { background: #1565c0; color: white; }
+.badge.err { background: #c62828; color: white; }
+.badge.init { background: #555; color: #aaa; }
+.zoom-value { min-width: 70px; color: #4fc3f7; font-family: Consolas, monospace; font-weight: bold; }
+.fps { color: #81c784; font-family: Consolas, monospace; font-weight: bold; }
+@media (max-width: 760px) {
+  .diagnostics { flex-basis: 260px; }
+}
