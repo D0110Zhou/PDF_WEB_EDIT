@@ -4,8 +4,8 @@ import { createRenderer } from './renderer-factory.js';
 import { PdfDocumentService } from '../pdf/pdf-document-service.js';
 import { detectVectorCells, extractVectorLines } from '../tables/vector-table-detector.js';
 import { detectRasterCells } from '../tables/raster-table-detector.js';
-import { downloadProject, normalizeProject, normalizeTextStyle, parseCellIndices, parsePageRange } from '../project/project-service.js';
-import { layoutCell } from '../layout/text-layout.js';
+import { chooseSaveTarget, downloadBlob, normalizeProject, normalizeTextStyle, parseCellIndices, parsePageRange, projectBlob, saveBlobWithPicker, writeBlobToTarget } from '../project/project-service.js';
+import { fontKeyForCharacter, layoutCell } from '../layout/text-layout.js';
 
 export class App {
   constructor(pdfjs = pdfjsLib) {
@@ -27,10 +27,8 @@ export class App {
     this.pdfPath = '';
     this.pdfFile = null;
     this.calibriFontBytes = null;
-    this.calibriFontPromise = null;
     this.cjkFontBytes = null;
     this.cjkFontName = '';
-    this.cjkFontPromise = null;
     this.pageNumber = 0;
     this.pageNumbers = [];
     this.pageWidth = 0;
@@ -74,8 +72,6 @@ export class App {
     this._bindUI();
     this._bindCanvas();
     this._resizeCanvas();
-    this.calibriFontPromise = this.loadDefaultSystemFont('calibri.ttf', 'PDFEditorCalibri', 'calibriFontBytes');
-    this.cjkFontPromise = this.loadDefaultSystemFont('kaiu.ttf', 'PDFEditorKaiTi', 'cjkFontBytes');
     window.addEventListener('resize', this._boundResize);
   }
 
@@ -107,7 +103,7 @@ export class App {
       this.viewer.classList.toggle('selecting-roi', this.roiMode);
       this._log(this.roiMode ? '請在頁面上拖曳框選表格區域' : '已取消框選模式');
     });
-    document.getElementById('saveProjectBtn').addEventListener('click', () => this.saveProject());
+    document.getElementById('saveProjectBtn').addEventListener('click', () => this.saveProject().catch(error => this._log(`JSON 儲存失敗: ${error.message}`)));
     document.getElementById('exportPdfBtn').addEventListener('click', () => this.exportPdf());
     document.getElementById('projectInput').addEventListener('change', e => {
       const file = e.target.files?.[0];
@@ -556,12 +552,22 @@ export class App {
     this._renderOverlay();
   }
 
-  saveProject() {
+  async saveProject() {
     this.saveCurrentPageState();
     if (!Object.keys(this.projectData).length) return this._log('目前沒有表格編輯資料可儲存');
     const orderedData = Object.fromEntries(Object.entries(this.projectData).sort((a, b) => Number(a[0]) - Number(b[0])));
-    downloadProject({ pdf_path: this.pdfPath || this.pdfFileName, style: this.textStyle, project_data: orderedData });
-    this._log(`已下載 JSON 專案：共 ${Object.keys(this.projectData).length} 頁`);
+    const data = { pdf_path: this.pdfPath || this.pdfFileName, style: this.textStyle, project_data: orderedData };
+    try {
+      const saved = await saveBlobWithPicker(projectBlob(data), {
+        suggestedName: 'pdf_editor_project.json', mimeType: 'application/json', extension: '.json', description: 'JSON 專案',
+      });
+      this._log(saved.method === 'picker'
+        ? `JSON 專案已儲存：${saved.fileName}（${Object.keys(this.projectData).length} 頁）`
+        : `JSON 專案已送至瀏覽器下載：${saved.fileName}（${Object.keys(this.projectData).length} 頁）`);
+    } catch (error) {
+      if (error.name === 'AbortError') return this._log('已取消 JSON 儲存');
+      throw error;
+    }
   }
 
   async loadCjkFont(file) {
@@ -585,33 +591,13 @@ export class App {
     this._renderOverlay();
   }
 
-  async loadDefaultSystemFont(fileName, family, fieldName) {
-    try {
-      const response = await fetch(`${import.meta.env.BASE_URL}__system-font/${fileName}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const bytes = new Uint8Array(await response.arrayBuffer());
-      const face = new FontFace(family, bytes);
-      await face.load();
-      document.fonts.add(face);
-      this[fieldName] = bytes;
-      if (fieldName === 'cjkFontBytes') this.cjkFontName = '系統標楷體';
-      this._updateFontStatus();
-      this._renderOverlay();
-      return bytes;
-    } catch (error) {
-      this._updateFontStatus();
-      this._log(`系統字型 ${fileName} 自動載入失敗: ${error.message}`);
-      return null;
-    }
-  }
-
   _updateFontStatus() {
     const latin = this.calibriFontBytes
       ? '英數：Calibri 已載入並將嵌入 PDF'
-      : '英數預覽：系統 Calibri；GitHub Pages 匯出前請選取 calibri.ttf';
+      : '英數預覽：系統 Calibri；PDF 使用 Calibri 字型名稱（未嵌入）';
     const cjk = this.cjkFontBytes
       ? `中文：${this.cjkFontName} 已載入並將嵌入 PDF`
-      : '中文預覽：系統標楷體；GitHub Pages 匯出前請選取 kaiu.ttf';
+      : '中文預覽：系統標楷體；若缺少字型，請從 C:\\Windows\\Fonts\\ 複製 kaiu.ttf 到「下載」，再載入字型';
     document.getElementById('fontStatus').textContent = `${latin}。${cjk}。`;
   }
 
@@ -619,22 +605,36 @@ export class App {
     if (!this.pdfFile) return this._log('請先載入原始 PDF');
     this.saveCurrentPageState();
     if (!Object.keys(this.projectData).length) return this._log('沒有表格編輯內容可匯出');
+    const needsKaiTi = Object.values(this.projectData).some(page => (page.texts || []).some(text =>
+      Array.from(String(text ?? '')).some(character => fontKeyForCharacter(character) === 'KaiTi')));
+    if (needsKaiTi && !this.cjkFontBytes) {
+      const message = '偵測到中文或中文標點，但尚未載入標楷體。請到 C:\\Windows\\Fonts\\ 複製 kaiu.ttf 到「下載」資料夾，再按「嵌入標楷體」選取該檔案。';
+      this._log(message);
+      window.alert(message);
+      return;
+    }
+    const saveOptions = {
+      suggestedName: `${this.pdfFileName.replace(/\.pdf$/i, '')}_edited.pdf`,
+      mimeType: 'application/pdf', extension: '.pdf', description: 'PDF 文件',
+    };
     try {
-      await this.calibriFontPromise;
-      await this.cjkFontPromise;
+      // Open the save dialog directly from the click handler, before async PDF
+      // generation can consume the browser's transient user activation.
+      const saveTarget = await chooseSaveTarget(saveOptions);
       const { exportEditedPdf } = await import('../pdf/pdf-export-service.js');
       const result = await exportEditedPdf(this.pdfFile, this.projectData, this.textStyle, this.calibriFontBytes, this.cjkFontBytes);
       if (!result.writtenPages) return this._log('專案中沒有非空白儲存格文字');
       const blob = new Blob([result.bytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `${this.pdfFileName.replace(/\.pdf$/i, '')}_edited.pdf`;
-      anchor.click();
-      setTimeout(() => URL.revokeObjectURL(url), 0);
-      this._log(`已匯出 ${result.writtenPages} 頁編輯內容；原始 PDF 未更動。`);
+      const saved = saveTarget
+        ? await writeBlobToTarget(saveTarget, blob)
+        : downloadBlob(blob, saveOptions.suggestedName);
+      this._log(saved.method === 'picker'
+        ? `PDF 已儲存：${saved.fileName}；原始 PDF 未更動。`
+        : `PDF 已送至瀏覽器下載：${saved.fileName}；原始 PDF 未更動。`);
     } catch (error) {
+      if (error.name === 'AbortError') return this._log('已取消 PDF 儲存');
       this._log(`PDF 匯出失敗: ${error.message}`);
+      if (/標楷體|Calibri/.test(error.message)) window.alert(error.message);
     }
   }
 

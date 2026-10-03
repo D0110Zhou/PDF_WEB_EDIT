@@ -25,12 +25,16 @@ vector lines first and falls back to PDF.js raster projections at 150 DPI. In
 automatic mode, pages with image operators use the full-fidelity PDF.js
 renderer; pages without them use the custom WebGPU/WebGL vector renderer.
 Selecting WebGPU or WebGL forces the custom vector renderer. PDF output adds
-FreeText annotations with generated appearance streams. The local Vite server
-reads `C:\Windows\Fonts\calibri.ttf` and `C:\Windows\Fonts\kaiu.ttf` for
-Calibri and 標楷體 preview and PDF embedding. A static deployment cannot access
-the visitor's Windows Fonts directory; use the font file selectors before
-exporting so those fonts can be embedded. See `GITHUB_PAGES_DEPLOY.md` for the
-GitHub Pages setup and font behavior.
+FreeText annotations with generated appearance streams and per-character
+Calibri/標楷體 runs for mixed-language lines. Preview requests
+Calibri and 標楷體 by installed system font family name; it does not read a
+Windows path. Latin PDF annotations use a Calibri system font resource by
+default. Load font files to embed them for portability; CJK text requires an
+embedded font. If 標楷體 is missing, copy `kaiu.ttf` from
+`C:\Windows\Fonts\` into Downloads, then load that copy. Saving JSON and
+exporting PDF use a save location picker when the browser supports it; other
+browsers download to their configured Downloads folder. See
+`GITHUB_PAGES_DEPLOY.md` for GitHub Pages setup and font behavior.
 
 ## Modules
 

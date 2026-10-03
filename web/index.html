@@ -22,10 +22,10 @@
       <label class="toolbar-control file-button">載入 JSON
         <input type="file" id="projectInput" accept="application/json,.json" />
       </label>
-      <label class="toolbar-control file-button">英數 Calibri
+      <label class="toolbar-control file-button">嵌入 Calibri
         <input type="file" id="latinFontInput" accept=".ttf,.otf,application/font-sfnt" />
       </label>
-      <label class="toolbar-control file-button">中文標楷體
+      <label class="toolbar-control file-button">嵌入標楷體
         <input type="file" id="cjkFontInput" accept=".ttf,.otf,application/font-sfnt" />
       </label>
       <button id="exportPdfBtn" type="button">匯出 PDF</button>
@@ -62,7 +62,7 @@
 · 滾輪縮放（以游標為中心）
 · 拉到 6400% 觀察向量清晰度</pre>
         <h2>表格格子</h2>
-        <p id="fontStatus" class="font-status">正在讀取系統 Calibri 與標楷體；部署版可從 C:\Windows\Fonts 選取字型。</p>
+        <p id="fontStatus" class="font-status">預覽使用系統 Calibri 與標楷體。若沒有標楷體，請從 C:\Windows\Fonts\ 複製 kaiu.ttf 到「下載」資料夾，再按「嵌入標楷體」載入。</p>
         <div class="cell-tools">
           <label>字級 pt <input id="fontSize" type="number" min="4" max="72" step="0.5" value="12" /></label>
           <label>行距倍數 <input id="lineSpacing" type="number" min="0.5" max="3" step="0.01" value="1" /></label>

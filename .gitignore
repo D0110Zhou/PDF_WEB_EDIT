@@ -1,14 +1,19 @@
-# Node / Vite
-**/node_modules/
-web/dist/
-web/.vite/
-.pnpm-store/
+# Track only the web app and the workflow required to publish it.
+/*
+!/.gitignore
+!/web/
+!/.github/
 
-# Python
-__pycache__/
-*.py[cod]
-.venv/
-venv/
+# Keep generated files and local Windows font files out of Git.
+/web/node_modules/
+/web/dist/
+/web/.vite/
+/web/.pnpm-store/
+/web/*.ttf
+/web/*.otf
 
-# Local renders and temporary QA output
-tmp/
+# Keep only the GitHub Pages workflow under .github.
+/.github/*
+!/.github/workflows/
+/.github/workflows/*
+!/.github/workflows/deploy.yml

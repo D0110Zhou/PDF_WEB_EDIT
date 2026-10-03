@@ -66,12 +66,44 @@ export function normalizeProject(data) {
   };
 }
 
-export function downloadProject(data, fileName = 'pdf_editor_project.json') {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+export function projectBlob(data) {
+  return new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+}
+
+export async function chooseSaveTarget({ suggestedName, mimeType, extension, description }) {
+  if (typeof window.showSaveFilePicker === 'function') {
+    return window.showSaveFilePicker({
+      suggestedName,
+      types: [{ description, accept: { [mimeType]: [extension] } }],
+    });
+  }
+  return null;
+}
+
+export async function writeBlobToTarget(handle, blob) {
+  const writable = await handle.createWritable();
+  try {
+    await writable.write(blob);
+    await writable.close();
+  } catch (error) {
+    await writable.abort?.();
+    throw error;
+  }
+  return { method: 'picker', fileName: handle.name };
+}
+
+export function downloadBlob(blob, suggestedName) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = fileName;
+  anchor.download = suggestedName;
   anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return { method: 'download', fileName: suggestedName };
+}
+
+export async function saveBlobWithPicker(blob, options) {
+  const handle = await chooseSaveTarget(options);
+  if (handle) return writeBlobToTarget(handle, blob);
+  return downloadBlob(blob, options.suggestedName);
 }

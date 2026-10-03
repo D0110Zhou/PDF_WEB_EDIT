@@ -1,8 +1,16 @@
 import { normalizeTextStyle } from '../project/project-service.js';
 
 const context = document.createElement('canvas').getContext('2d');
-const isCJK = character => /[\u2e80-\u9fff\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]/u.test(character);
-const familyFor = character => isCJK(character)
+const CALIBRI_SYMBOLS = new Set(['▼', '㊣', '℃', '℉']);
+const CJK_SCRIPT = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Bopomofo}]/u;
+const CJK_PUNCTUATION = /[\u3000-\u303f\ufe10-\ufe1f\ufe30-\ufe4f\uff01-\uff0f\uff1a-\uff20\uff3b-\uff40\uff5b-\uff65]/u;
+
+export function fontKeyForCharacter(character) {
+  if (CALIBRI_SYMBOLS.has(character)) return 'Calibri';
+  return CJK_SCRIPT.test(character) || CJK_PUNCTUATION.test(character) ? 'KaiTi' : 'Calibri';
+}
+
+const familyFor = character => fontKeyForCharacter(character) === 'KaiTi'
   ? 'PDFEditorKaiTi, "DFKai-SB", "BiauKai", KaiTi, "標楷體", serif'
   : 'PDFEditorCalibri, Calibri, Arial, sans-serif';
 
@@ -72,10 +80,11 @@ export function layoutCell(text, rect, styleInput) {
     if (!line) return;
     const runs = [];
     for (const character of line) {
+      const fontKey = fontKeyForCharacter(character);
       const family = familyFor(character);
       const last = runs.at(-1);
-      if (last?.family === family) last.text += character;
-      else runs.push({ family, text: character });
+      if (last?.fontKey === fontKey) last.text += character;
+      else runs.push({ fontKey, family, text: character });
     }
     const totalWidth = runs.reduce((sum, run) => sum + textWidth(run.text, fontSize), 0);
     let x = rect.x0 + (width - totalWidth) / 2;
